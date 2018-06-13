@@ -40,6 +40,7 @@ In order to build this library, the following packages are required:
 * [gradle](https://gradle.org/)
 
 ## Setup
+This library is avaiable on Maven Central.
 
 Replace `VERSION` below with required version.
 
@@ -47,7 +48,7 @@ To use `MCJL` with Maven project, use:
 ```
 <dependency>
   <groupId>org.miracl.milagro.amcl</groupId>
-  <artifactId>MCJL</artifactId>
+  <artifactId>milagro-crypto-java</artifactId>
   <version>VERSION</version>
 </dependency>
 ```
@@ -55,9 +56,11 @@ To use `MCJL` with Maven project, use:
 For Gradle project:
 ```
 dependencies {
-    compile 'org.miracl.milagro.amcl:MCJL:VERSION'
+   compile 'org.miracl.milagro.amcl:milagro-crypto-java:VERSION'
 }
 ```
+
+Fill the `gradle.properties` file if you want to upload on Maven Central.
 
 `MCJL` needs Java 8.
 

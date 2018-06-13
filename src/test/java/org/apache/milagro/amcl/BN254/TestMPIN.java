@@ -260,9 +260,9 @@ If Time permits are ON, AND pin error detection is NOT required, set xID=null, H
 			{
 				int err=MPIN.KANGAROO(E,F);
 				if (err!=0) fail("Client PIN is out by "+err);
-				else fail("Server says - Bad Pin. I don't know you. Feck off");
+				else fail("Server says - Bad Pin. I don't know you.");
 			}
-			else fail("Server says - Bad Pin. I don't know you. Feck off");
+			else fail("Server says - Bad Pin. I don't know you.");
 
 		}
 		else System.out.println("Server says - PIN is good! You really are "+IDstr);
