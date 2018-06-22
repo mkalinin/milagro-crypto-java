@@ -36,7 +36,7 @@ public final class ECP {
 
 	public static final int CURVETYPE=WEIERSTRASS;
 	public static final int CURVE_PAIRING_TYPE=BLS;
-	public static final int SEXTIC_TWIST=D_TYPE;
+	public static final int SEXTIC_TWIST=M_TYPE;
 	public static final int SIGN_OF_X=POSITIVEX;
 
 	private FP x;

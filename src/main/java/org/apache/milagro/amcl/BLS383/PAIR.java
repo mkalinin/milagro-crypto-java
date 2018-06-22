@@ -26,7 +26,7 @@ public final class PAIR {
 	public static final boolean USE_GLV =true;
 	public static final boolean USE_GS_G2 =true;
 	public static final boolean USE_GS_GT =true;	
-	public static final boolean GT_STRONG=false;
+	public static final boolean GT_STRONG=true;
 
 
 /* Line function */
