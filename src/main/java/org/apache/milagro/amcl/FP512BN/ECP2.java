@@ -25,11 +25,11 @@ public final class ECP2 {
 	private FP2 x;
 	private FP2 y;
 	private FP2 z;
-	private boolean INF;
+//	private boolean INF;
 
 /* Constructor - set this=O */
 	public ECP2() {
-		INF=true;
+//		INF=true;
 		x=new FP2(0);
 		y=new FP2(1);
 		z=new FP2(0);
@@ -37,7 +37,7 @@ public final class ECP2 {
 
 /* Test this=O? */
 	public boolean is_infinity() {
-		if (INF) return true;                    //******
+//		if (INF) return true;                    //******
 		return (x.iszilch() && z.iszilch());
 	}
 /* copy this=P */
@@ -46,11 +46,11 @@ public final class ECP2 {
 		x.copy(P.x);
 		y.copy(P.y);
 		z.copy(P.z);
-		INF=P.INF;
+//		INF=P.INF;
 	}
 /* set this=O */
 	public void inf() {
-		INF=true;
+//		INF=true;
 		x.zero();
 		y.one();
 		z.zero();
@@ -63,10 +63,10 @@ public final class ECP2 {
 		y.cmove(Q.y,d);
 		z.cmove(Q.z,d);
 
-		boolean bd;
-		if (d==0) bd=false;
-		else bd=true;
-		INF^=(INF^Q.INF)&bd;
+	//	boolean bd;
+	//	if (d==0) bd=false;
+	//	else bd=true;
+	//	INF^=(INF^Q.INF)&bd;
 	}
 
 /* return 1 if b==c, no branching */
@@ -102,8 +102,8 @@ public final class ECP2 {
 
 /* Test if P == Q */
 	public boolean equals(ECP2 Q) {
-		if (is_infinity() && Q.is_infinity()) return true;
-		if (is_infinity() || Q.is_infinity()) return false;
+//		if (is_infinity() && Q.is_infinity()) return true;
+//		if (is_infinity() || Q.is_infinity()) return false;
 
 
 		FP2 a=new FP2(x);                            // *****
@@ -249,8 +249,9 @@ public final class ECP2 {
 		FP2 rhs=RHS(x);
 		FP2 y2=new FP2(y);
 		y2.sqr();
-		if (y2.equals(rhs)) INF=false;
-		else {x.zero();INF=true;}
+		if (!y2.equals(rhs)) inf();
+//		if (y2.equals(rhs)) INF=false;
+//		else {x.zero();INF=true;}
 	}
 
 /* construct this from x - but set to O if not on curve */
@@ -262,14 +263,14 @@ public final class ECP2 {
 		if (rhs.sqrt()) 
 		{
 			y.copy(rhs);
-			INF=false;
+			//INF=false;
 		}
-		else {x.zero();INF=true;}
+		else {/*x.zero();INF=true;*/ inf();}
 	}
 
 /* this+=this */
 	public int dbl() {
-		if (INF) return -1;      
+//		if (INF) return -1;      
 //System.out.println("Into dbl");
 		FP2 iy=new FP2(y);
 		if (ECP.SEXTIC_TWIST==ECP.D_TYPE)
@@ -321,12 +322,12 @@ public final class ECP2 {
 
 /* this+=Q - return 0 for add, 1 for double, -1 for O */
 	public int add(ECP2 Q) {
-		if (INF)
-		{
-			copy(Q);
-			return -1;
-		}
-		if (Q.INF) return -1;
+//		if (INF)
+//		{
+//			copy(Q);
+//			return -1;
+//		}
+//		if (Q.INF) return -1;
 //System.out.println("Into add");
 		int b=3*ROM.CURVE_B_I;
 		FP2 t0=new FP2(x);
@@ -411,7 +412,7 @@ public final class ECP2 {
 /* set this*=q, where q is Modulus, using Frobenius */
 	public void frob(FP2 X)
 	{
-		if (INF) return;
+//		if (INF) return;
 		FP2 X2=new FP2(X);
 
 		X2.sqr();
@@ -489,6 +490,91 @@ public final class ECP2 {
 	}
 
 /* P=u0.Q0+u1*Q1+u2*Q2+u3*Q3 */
+// Bos & Costello https://eprint.iacr.org/2013/458.pdf
+// Faz-Hernandez & Longa & Sanchez  https://eprint.iacr.org/2013/158.pdf
+// Side channel attack secure 
+
+	public static ECP2 mul4(ECP2[] Q,BIG[] u)
+	{
+		int i,j,nb,pb;
+		ECP2 W=new ECP2();
+		ECP2 P=new ECP2();
+		ECP2[] T=new ECP2[8];
+
+		BIG mt=new BIG();
+		BIG[] t=new BIG[4];
+
+		byte[] w=new byte[BIG.NLEN*BIG.BASEBITS+1];
+		byte[] s=new byte[BIG.NLEN*BIG.BASEBITS+1];
+
+		for (i=0;i<4;i++)
+		{
+			t[i]=new BIG(u[i]);
+			t[i].norm();
+			Q[i].affine();
+		}
+
+        T[0] = new ECP2(); T[0].copy(Q[0]);  // Q[0]
+        T[1] = new ECP2(); T[1].copy(T[0]); T[1].add(Q[1]);  // Q[0]+Q[1]
+        T[2] = new ECP2(); T[2].copy(T[0]); T[2].add(Q[2]);  // Q[0]+Q[2]
+        T[3] = new ECP2(); T[3].copy(T[1]); T[3].add(Q[2]);  // Q[0]+Q[1]+Q[2]
+        T[4] = new ECP2(); T[4].copy(T[0]); T[4].add(Q[3]);  // Q[0]+Q[3]
+        T[5] = new ECP2(); T[5].copy(T[1]); T[5].add(Q[3]);  // Q[0]+Q[1]+Q[3]
+        T[6] = new ECP2(); T[6].copy(T[2]); T[6].add(Q[3]);  // Q[0]+Q[2]+Q[3]
+        T[7] = new ECP2(); T[7].copy(T[3]); T[7].add(Q[3]);  // Q[0]+Q[1]+Q[2]+Q[3]
+
+    // Make it odd
+        pb=1-t[0].parity();
+        t[0].inc(pb);
+        t[0].norm();
+
+    // Number of bits
+        mt.zero();
+        for (i=0;i<4;i++) {
+            mt.or(t[i]); 
+        }
+        nb=1+mt.nbits();
+
+    // Sign pivot 
+        s[nb-1]=1;
+        for (i=0;i<nb-1;i++) {
+            t[0].fshr(1);
+            s[i]=(byte)(2*t[0].parity()-1);
+        }
+
+    // Recoded exponent
+        for (i=0; i<nb; i++) {
+            w[i]=0;
+            int k=1;
+            for (j=1; j<4; j++) {
+                byte bt=(byte)(s[i]*t[j].parity());
+                t[j].fshr(1);
+                t[j].dec((int)(bt)>>1);
+                t[j].norm();
+                w[i]+=bt*(byte)k;
+                k*=2;
+            }
+        } 
+
+    // Main loop
+        P.select(T,(int)(2*w[nb-1]+1));  
+        for (i=nb-2;i>=0;i--) {
+            P.dbl();
+            W.select(T,(int)(2*w[i]+s[i]));
+            P.add(W);
+        }
+
+    // apply correction
+        W.copy(P);   
+        W.sub(Q[0]);
+        P.cmove(W,pb);   
+		P.affine();
+		return P;
+	}        
+
+
+/* P=u0.Q0+u1*Q1+u2*Q2+u3*Q3 */
+/*
 	public static ECP2 mul4(ECP2[] Q,BIG[] u)
 	{
 		int i,j,nb;
@@ -509,7 +595,7 @@ public final class ECP2 {
 			Q[i].affine();
 		}
 
-/* precompute table */
+// precompute table 
 
 		W[0]=new ECP2(); W[0].copy(Q[0]); W[0].sub(Q[1]);
 
@@ -531,7 +617,7 @@ public final class ECP2 {
 		W[4].sub(T);
 		W[7].add(T);
 
-/* if multiplier is even add 1 to multiplier, and add P to correction */
+// if multiplier is even add 1 to multiplier, and add P to correction 
 		mt.zero(); C.inf();
 		for (i=0;i<4;i++)
 		{
@@ -545,7 +631,7 @@ public final class ECP2 {
 
 		nb=1+mt.nbits();
 
-/* convert exponent to signed 1-bit window */
+// convert exponent to signed 1-bit window 
 		for (j=0;j<nb;j++)
 		{
 			for (i=0;i<4;i++)
@@ -565,12 +651,12 @@ public final class ECP2 {
 			P.dbl();
 			P.add(T);
 		}
-		P.sub(C); /* apply correction */
+		P.sub(C); // apply correction 
 
 		P.affine();
 		return P;
 	}
-
+*/
 
 /* needed for SOK */
 	public static ECP2 mapit(byte[] h)
@@ -630,12 +716,12 @@ public final class ECP2 {
 
 		if (ECP.CURVE_PAIRING_TYPE==ECP.BLS)
 		{
-			ECP2 xQ,x2Q;
-			xQ=new ECP2();
-			x2Q=new ECP2();
+		//	ECP2 xQ,x2Q;
+		//	xQ=new ECP2();
+		//	x2Q=new ECP2();
 
-			xQ=Q.mul(x);
-			x2Q=xQ.mul(x);
+			ECP2 xQ=Q.mul(x);
+			ECP2 x2Q=xQ.mul(x);
 
 			if (ECP.SIGN_OF_X==ECP.NEGATIVEX)
 			{
@@ -659,6 +745,10 @@ public final class ECP2 {
 		return Q;
 	}
 
+	public static ECP2 generator()
+	{
+		return new ECP2(new FP2(new BIG(ROM.CURVE_Pxa),new BIG(ROM.CURVE_Pxb)),new FP2(new BIG(ROM.CURVE_Pya),new BIG(ROM.CURVE_Pyb)));
+	}
 
 /*
 	public static void main(String[] args) {

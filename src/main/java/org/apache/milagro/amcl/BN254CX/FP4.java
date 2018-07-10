@@ -43,6 +43,13 @@ public final class FP4 {
 		reduce();
 		return (a.iszilch() && b.iszilch());
 	}
+
+	public void cmove(FP4 g,int d)
+	{
+		a.cmove(g.a,d);
+		b.cmove(g.b,d);
+	}
+
 /* test this==1 ? */
 	public boolean isunity() {
 		FP2 one=new FP2(1);
@@ -119,6 +126,7 @@ public final class FP4 {
 /* set this=-this */
 	public void neg()
 	{
+		norm();
 		FP2 m=new FP2(a);
 		FP2 t=new FP2(0);
 		m.add(b);
@@ -161,6 +169,15 @@ public final class FP4 {
 		a.mul(s);
 		b.mul(s);
 	}
+
+/* this=x-this */
+	public void rsub(FP4 x)
+	{
+		neg();
+		add(x);
+	}
+
+
 /* this*=c where c is int */
 	public void imul(int c)
 	{
@@ -533,6 +550,95 @@ public final class FP4 {
 		r=r.xtr_pow(d);
 		return r;
 	}
+
+/* this/=2 */
+	public void div2()
+	{
+		a.div2();
+		b.div2();
+	}
+
+	public void div_i()
+	{
+		FP2 u=new FP2(a);
+		FP2 v=new FP2(b);
+		u.div_ip();
+		a.copy(v);
+		b.copy(u);
+	}
+
+	public void div_2i() {
+		FP2 u=new FP2(a);
+		FP2 v=new FP2(b);
+		u.div_ip2();
+		v.add(v); v.norm();
+		a.copy(v);
+		b.copy(u);
+	}
+
+
+/* sqrt(a+ib) = sqrt(a+sqrt(a*a-n*b*b)/2)+ib/(2*sqrt(a+sqrt(a*a-n*b*b)/2)) */
+/* returns true if this is QR */
+	public boolean sqrt()
+	{
+		if (iszilch()) return true;
+		FP2 wa=new FP2(a);
+		FP2 ws=new FP2(b);
+		FP2 wt=new FP2(a);
+		
+		if (ws.iszilch())
+		{
+			if (wt.sqrt())
+			{
+				a.copy(wt);
+				b.zero();
+			} else {
+				wt.div_ip();
+				wt.sqrt();
+				b.copy(wt);
+				a.zero();
+			}
+			return true;
+		}
+
+		ws.sqr();
+		wa.sqr();
+		ws.mul_ip();
+		ws.norm();
+		wa.sub(ws);
+
+		ws.copy(wa);
+		if (!ws.sqrt()) {
+			return false;
+		}
+
+		wa.copy(wt); wa.add(ws); wa.norm(); wa.div2();
+
+		if (!wa.sqrt()) {
+			wa.copy(wt); wa.sub(ws); wa.norm(); wa.div2();
+			if (!wa.sqrt()) {
+				return false;
+			}
+		}
+		wt.copy(b);
+		ws.copy(wa); ws.add(wa);
+		ws.inverse();
+
+		wt.mul(ws);
+		a.copy(wa);
+		b.copy(wt);
+
+		return true;
+	}
+
+/* this*=s where s is FP */
+	public void qmul(FP s)
+	{
+		a.pmul(s);
+		b.pmul(s);
+	}
+
+
 
 /*
 	public static void main(String[] args) {

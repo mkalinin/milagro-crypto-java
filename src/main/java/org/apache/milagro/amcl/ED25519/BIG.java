@@ -477,6 +477,13 @@ public class BIG {
 			w[i]+=x.w[i];
 	}
 
+/* this|=x */
+	public void or(BIG x) {
+		for (int i=0;i<NLEN;i++)
+			w[i]|=x.w[i];
+	}
+
+
 /* this+=x, where x is int */
 	public void inc(int x) {
 		norm();
@@ -850,23 +857,23 @@ public class BIG {
 		{
 			while (u.parity()==0)
 			{
-				u.shr(1);
+				u.fshr(1);
 				if (x1.parity()!=0)
 				{
 					x1.add(p);
 					x1.norm();
 				}
-				x1.shr(1);
+				x1.fshr(1);
 			}
 			while (v.parity()==0)
 			{
-				v.shr(1);
+				v.fshr(1);
 				if (x2.parity()!=0)
 				{
 					x2.add(p);
 					x2.norm();
 				}
-				x2.shr(1);
+				x2.fshr(1);
 			}
 			if (comp(u,v)>=0)
 			{
