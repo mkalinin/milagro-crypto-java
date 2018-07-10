@@ -32,13 +32,13 @@ import org.apache.milagro.amcl.AES;
 public class MPIN
 {
 
-	public static final int SHA256=32;
-	public static final int SHA384=48;
-	public static final int SHA512=64;
+//	public static final int SHA256=32;
+//	public static final int SHA384=48;
+//	public static final int SHA512=64;
 
 	public static final int EFS=BIG.MODBYTES;
 	public static final int EGS=BIG.MODBYTES;
-	public static final int PAS=16;
+//	public static final int PAS=16;
 	public static final int INVALID_POINT=-14;
 	public static final int BAD_PARAMS=-11;
 	public static final int WRONG_ORDER=-18;
@@ -51,7 +51,7 @@ public class MPIN
 	public static final int TS=10;         /* 10 for 4 digit PIN, 14 for 6-digit PIN - 2^TS/TS approx = sqrt(MAXPIN) */
 	public static final int TRAP=200;      /* 200 for 4 digit PIN, 2000 for 6-digit PIN  - approx 2*sqrt(MAXPIN) */
 
-	public static final int HASH_TYPE=SHA256;
+//	public static final int HASH_TYPE=SHA256;
 
 
 /* Hash number (optional) and string to array size of Bigs */
@@ -60,7 +60,7 @@ public class MPIN
 	{
 		byte[] R=null;
 
-		if (sha==SHA256)
+		if (sha==ECP.SHA256)
 		{
 			HASH256 H=new HASH256();
 			if (n>0) H.process_num(n);
@@ -68,14 +68,14 @@ public class MPIN
 			H.process_array(B);
 			R=H.hash();
 		}
-		if (sha==SHA384)
+		if (sha==ECP.SHA384)
 		{
 			HASH384 H=new HASH384();
 			if (n>0) H.process_num(n);
 			H.process_array(B);
 			R=H.hash();
 		}
-		if (sha==SHA512)
+		if (sha==ECP.SHA512)
 		{
 			HASH512 H=new HASH512();
 			if (n>0) H.process_num(n);
@@ -164,27 +164,27 @@ public class MPIN
 		U.getX().toBytes(w); for (int i=4*EFS;i<5*EFS;i++) t[i]=w[i-4*EFS];
 		U.getY().toBytes(w); for (int i=5*EFS;i<6*EFS;i++) t[i]=w[i-5*EFS];
 		
-		if (sha==SHA256)
+		if (sha==ECP.SHA256)
 		{
 			HASH256 H=new HASH256();
 			H.process_array(t);
 			h=H.hash();
 		}
-		if (sha==SHA384)
+		if (sha==ECP.SHA384)
 		{
 			HASH384 H=new HASH384();
 			H.process_array(t);
 			h=H.hash();
 		}
-		if (sha==SHA512)
+		if (sha==ECP.SHA512)
 		{
 			HASH512 H=new HASH512();
 			H.process_array(t);
 			h=H.hash();
 		}
 		if (h==null) return null;
-		byte[] R=new byte[PAS];
-		for (int i=0;i<PAS;i++) R[i]=h[i];
+		byte[] R=new byte[ECP.AESKEY];
+		for (int i=0;i<ECP.AESKEY;i++) R[i]=h[i];
 		return R;
 	}
 
@@ -299,7 +299,7 @@ public class MPIN
 
 		P.add(Q);
 
-		P.toBytes(R);
+		P.toBytes(R,false);
 		return 0;
 	}
 
@@ -345,7 +345,7 @@ public class MPIN
 		R=R.pinmul(pin,PBLEN);
 		P.sub(R);
 
-		P.toBytes(TOKEN);
+		P.toBytes(TOKEN,false);
 
 		return 0;
 	}
@@ -365,7 +365,7 @@ public class MPIN
 
 		P=PAIR.G1mul(P,px);
 		P.neg();
-		P.toBytes(SEC);
+		P.toBytes(SEC,false);
 		return 0;
 	}
 
@@ -410,7 +410,7 @@ public class MPIN
 			if (xID!=null)
 			{
 				P=PAIR.G1mul(P,x);
-				P.toBytes(xID);
+				P.toBytes(xID,false);
 				W=PAIR.G1mul(W,x);
 				P.add(W);
 			}
@@ -419,27 +419,26 @@ public class MPIN
 				P.add(W);
 				P=PAIR.G1mul(P,x);
 			}
-			if (xCID!=null) P.toBytes(xCID);
+			if (xCID!=null) P.toBytes(xCID,false);
 		}
 		else
 		{
 			if (xID!=null)
 			{
 				P=PAIR.G1mul(P,x);
-				P.toBytes(xID);
+				P.toBytes(xID,false);
 			}
 		}
 
 
-		T.toBytes(SEC);
+		T.toBytes(SEC,false);
 		return 0;
 	}
 
 /* Extract Server Secret SST=S*Q where Q is fixed generator in G2 and S is master secret */
 	public static int GET_SERVER_SECRET(byte[] S,byte[] SST)
 	{
-		ECP2 Q=new ECP2(new FP2(new BIG(ROM.CURVE_Pxa),new BIG(ROM.CURVE_Pxb)),new FP2(new BIG(ROM.CURVE_Pya),new BIG(ROM.CURVE_Pyb)));
-
+		ECP2 Q=ECP2.generator();
 		BIG s=BIG.fromBytes(S);
 		Q=PAIR.G2mul(Q,s);
 		Q.toBytes(SST);
@@ -478,7 +477,7 @@ public class MPIN
 		else
 			P=ECP.mapit(G);
 
-		PAIR.G1mul(P,x).toBytes(W);
+		PAIR.G1mul(P,x).toBytes(W,false);
 		return 0;
 	}
 
@@ -498,7 +497,7 @@ public class MPIN
 		BIG s=BIG.fromBytes(S);
 		ECP OP=PAIR.G1mul(P,s);
 
-		OP.toBytes(CTT);
+		OP.toBytes(CTT,false);
 		return 0;
 	}
 
@@ -508,23 +507,23 @@ public class MPIN
 		byte[] h=hashit(sha,0,CID,EFS);
 		ECP R,P=ECP.mapit(h);
 
-		P.toBytes(HID);   // new
+		P.toBytes(HID,false);   // new
 		if (date!=0)
 		{
 	//		if (HID!=null) P.toBytes(HID);
 			h=hashit(sha,date,h,EFS);
 			R=ECP.mapit(h);
 			P.add(R);
-			P.toBytes(HTID);
+			P.toBytes(HTID,false);
 		}
-	//	else P.toBytes(HID);
+	//	else P.toBytes(HID,false);
 	}
 
 /* Implement step 2 of MPin protocol on server side */
 	public static int SERVER_2(int date,byte[] HID,byte[] HTID,byte[] Y,byte[] SST,byte[] xID,byte[] xCID,byte[] mSEC,byte[] E,byte[] F)
 	{
 		BIG q=new BIG(ROM.Modulus);
-		ECP2 Q=new ECP2(new FP2(new BIG(ROM.CURVE_Pxa),new BIG(ROM.CURVE_Pxb)),new FP2(new BIG(ROM.CURVE_Pya),new BIG(ROM.CURVE_Pyb)));
+		ECP2 Q=ECP2.generator();
 
 		ECP2 sQ=ECP2.fromBytes(SST);
 		if (sQ.is_infinity()) return INVALID_POINT;	
@@ -649,7 +648,7 @@ public class MPIN
 
 		P=ECP.mapit(CID);
 
-		ECP2 Q=new ECP2(new FP2(new BIG(ROM.CURVE_Pxa),new BIG(ROM.CURVE_Pxb)),new FP2(new BIG(ROM.CURVE_Pya),new BIG(ROM.CURVE_Pyb)));
+		ECP2 Q=ECP2.generator();
 
 		g=PAIR.ate(Q,T);
 		g=PAIR.fexp(g);
@@ -717,7 +716,7 @@ public class MPIN
 */
 		t=mpin_hash(sha,c,W);
 
-		for (int i=0;i<PAS;i++) CK[i]=t[i];
+		for (int i=0;i<ECP.AESKEY;i++) CK[i]=t[i];
 
 		return 0;
 	}
@@ -756,7 +755,7 @@ public class MPIN
 
 		t=mpin_hash(sha,c,U);
 
-		for (int i=0;i<PAS;i++) SK[i]=t[i];
+		for (int i=0;i<ECP.AESKEY;i++) SK[i]=t[i];
 
 		return 0;
 	}

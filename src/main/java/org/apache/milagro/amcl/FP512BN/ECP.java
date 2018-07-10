@@ -39,21 +39,35 @@ public final class ECP {
 	public static final int SEXTIC_TWIST=M_TYPE;
 	public static final int SIGN_OF_X=POSITIVEX;
 
+	public static final int SHA256=32;
+	public static final int SHA384=48;
+	public static final int SHA512=64;
+
+	public static final int HASH_TYPE=32;
+	public static final int AESKEY=16;
+
 	private FP x;
 	private FP y;
 	private FP z;
-	private boolean INF;
+//	private boolean INF;
 
 /* Constructor - set to O */
 	public ECP() {
-		INF=true;
+		//INF=true;
 		x=new FP(0);
 		y=new FP(1);
-		z=new FP(0);
+		if (CURVETYPE==EDWARDS)
+		{
+			z=new FP(1);
+		}
+		else
+		{
+			z=new FP(0);
+		}
 	}
 /* test for O point-at-infinity */
 	public boolean is_infinity() {
-		if (INF) return true;                            // Edits made
+//		if (INF) return true;                            // Edits made
 		if (CURVETYPE==EDWARDS)
 		{
 			return (x.iszilch() && y.equals(z));
@@ -76,12 +90,12 @@ public final class ECP {
 		z.cswap(Q.z,d);
 	//	if (CURVETYPE!=EDWARDS)
 	//	{
-			boolean bd;
-			if (d==0) bd=false;
-			else bd=true;
-			bd=bd&(INF^Q.INF);
-			INF^=bd;
-			Q.INF^=bd;
+	//		boolean bd;
+	//		if (d==0) bd=false;
+	//		else bd=true;
+	//		bd=bd&(INF^Q.INF);
+	//		INF^=bd;
+	//		Q.INF^=bd;
 	//	}
 	}
 
@@ -93,10 +107,10 @@ public final class ECP {
 		z.cmove(Q.z,d);
 	//	if (CURVETYPE!=EDWARDS)
 	//	{
-			boolean bd;
-			if (d==0) bd=false;
-			else bd=true;
-			INF^=(INF^Q.INF)&bd;
+	//		boolean bd;
+	//		if (d==0) bd=false;
+	//		else bd=true;
+	//		INF^=(INF^Q.INF)&bd;
 	//	}
 	}
 
@@ -132,8 +146,8 @@ public final class ECP {
 
 /* Test P == Q */
 	public boolean equals(ECP Q) {
-		if (is_infinity() && Q.is_infinity()) return true;
-		if (is_infinity() || Q.is_infinity()) return false;
+//		if (is_infinity() && Q.is_infinity()) return true;
+//		if (is_infinity() || Q.is_infinity()) return false;
 
 		FP a=new FP(0);                                        // Edits made
 		FP b=new FP(0);
@@ -155,7 +169,7 @@ public final class ECP {
 		x.copy(P.x);
 		if (CURVETYPE!=MONTGOMERY) y.copy(P.y);
 		z.copy(P.z);
-		INF=P.INF;
+		//INF=P.INF;
 	}
 /* this=-this */
 	public void neg() {
@@ -172,7 +186,7 @@ public final class ECP {
 	}
 /* set this=O */
 	public void inf() {
-		INF=true;
+//		INF=true;
 		x.zero();
 		if (CURVETYPE!=MONTGOMERY) y.one();
 		if (CURVETYPE!=EDWARDS) z.zero();
@@ -205,6 +219,7 @@ public final class ECP {
 			FP one=new FP(1);
 			b.mul(r);
 			b.sub(one);
+			b.norm();
 			if (ROM.CURVE_A==-1) r.neg();
 			r.sub(one); r.norm();
 			b.inverse();
@@ -233,15 +248,17 @@ public final class ECP {
 
 		if (CURVETYPE==MONTGOMERY)
 		{
-			if (rhs.jacobi()==1) INF=false;
-			else inf();
+			if (rhs.jacobi()!=1) inf();
+			//if (rhs.jacobi()==1) INF=false;
+			//else inf();
 		}
 		else
 		{
 			FP y2=new FP(y);
 			y2.sqr();
-			if (y2.equals(rhs)) INF=false;
-			else inf();
+			if (!y2.equals(rhs)) inf();
+			//if (y2.equals(rhs)) INF=false;
+			//else inf();
 		}
 	}
 /* set (x,y) from BIG and a bit */
@@ -255,7 +272,7 @@ public final class ECP {
 			FP ny=rhs.sqrt();
 			if (ny.redc().parity()!=s) ny.neg();
 			y.copy(ny);
-			INF=false;
+			//INF=false;
 		}
 		else inf();
 	}
@@ -269,14 +286,14 @@ public final class ECP {
 		if (rhs.jacobi()==1)
 		{
 			if (CURVETYPE!=MONTGOMERY) y.copy(rhs.sqrt());
-			INF=false;
+			//INF=false;
 		}
-		else INF=true;
+		else inf(); //INF=true;
 	}
 
 /* set to affine - from (x,y,z) to (x,y) */
 	public void affine() {
-		if (is_infinity()) return;
+		if (is_infinity()) return;	// 
 		FP one=new FP(1);
 		if (z.equals(one)) return;
 		z.inverse();
@@ -323,20 +340,31 @@ public final class ECP {
 		return z;
 	}
 /* convert to byte array */
-	public void toBytes(byte[] b)
+	public void toBytes(byte[] b,boolean compress)
 	{
 		byte[] t=new byte[BIG.MODBYTES];
-		if (CURVETYPE!=MONTGOMERY) b[0]=0x04;
-		else b[0]=0x02;
-	
 		affine();
+
 		x.redc().toBytes(t);
 		for (int i=0;i<BIG.MODBYTES;i++) b[i+1]=t[i];
-		if (CURVETYPE!=MONTGOMERY)
+
+		if (CURVETYPE==MONTGOMERY)
 		{
-			y.redc().toBytes(t);
-			for (int i=0;i<BIG.MODBYTES;i++) b[i+BIG.MODBYTES+1]=t[i];
+			b[0]=0x06;
+			return;
 		}
+
+		if (compress)
+		{
+			b[0]=0x02;
+			if (y.redc().parity()==1) b[0]=0x03;
+			return;
+		}
+
+		b[0]=0x04;
+
+		y.redc().toBytes(t);
+		for (int i=0;i<BIG.MODBYTES;i++) b[i+BIG.MODBYTES+1]=t[i];
 	}
 /* convert from byte array to point */
 	public static ECP fromBytes(byte[] b)
@@ -348,6 +376,11 @@ public final class ECP {
 		BIG px=BIG.fromBytes(t);
 		if (BIG.comp(px,p)>=0) return new ECP();
 
+		if (CURVETYPE==MONTGOMERY)
+		{
+			return new ECP(px);
+		}
+
 		if (b[0]==0x04)
 		{
 			for (int i=0;i<BIG.MODBYTES;i++) t[i]=b[i+BIG.MODBYTES+1];
@@ -355,7 +388,12 @@ public final class ECP {
 			if (BIG.comp(py,p)>=0) return new ECP();
 			return new ECP(px,py);
 		}
-		else return new ECP(px);
+
+		if (b[0]==0x02 || b[0]==0x03)
+		{
+			return new ECP(px,(int)(b[0]&1));
+		}
+		return new ECP();
 	}
 /* convert to hex string */
 	public String toString() {
@@ -375,7 +413,7 @@ public final class ECP {
 
 /* this*=2 */
 	public void dbl() {
-		if (INF) return;
+//		if (INF) return;
 		
 		if (CURVETYPE==WEIERSTRASS)
 		{
@@ -530,12 +568,12 @@ public final class ECP {
 
 /* this+=Q */
 	public void add(ECP Q) {
-		if (INF)
-		{
-			copy(Q);
-			return;
-		}
-		if (Q.INF) return;
+//		if (INF)
+//		{
+//			copy(Q);
+//			return;
+//		}
+//		if (Q.INF) return;
 
 		if (CURVETYPE==WEIERSTRASS)
 		{
@@ -968,7 +1006,28 @@ public final class ECP {
 		return S;
 	}
 
-/* Hash byte string to curve point */
+// multiply a point by the curves cofactor
+	public void cfp()
+	{
+		int cf=ROM.CURVE_Cof_I;
+		if (cf==1) return;
+		if (cf==4)
+		{
+			dbl(); dbl();
+			affine();
+			return;
+		} 
+		if (cf==8)
+		{
+			dbl(); dbl(); dbl();
+			affine();
+			return;
+		}
+		BIG c=new BIG(ROM.CURVE_Cof);
+		copy(mul(c));
+	}
+
+/* Map byte string to curve point */
 	public static ECP mapit(byte[] h)
 	{
 		BIG q=new BIG(ROM.Modulus);
@@ -978,17 +1037,35 @@ public final class ECP {
 
 		while (true)
 		{
-			P=new ECP(x,0);
+			while (true)
+			{
+				if (CURVETYPE!=MONTGOMERY)
+					P=new ECP(x,0);
+				else
+					P=new ECP(x);	
+				x.inc(1); x.norm();
+				if (!P.is_infinity()) break;
+			}
+			P.cfp();
 			if (!P.is_infinity()) break;
-			x.inc(1); x.norm();
-		}
-
-		if (ECP.CURVE_PAIRING_TYPE!=ECP.BN)
-		{
-			BIG c=new BIG(ROM.CURVE_Cof);
-			P=P.mul(c);
 		}
 		return P;
+	}
+
+	public static ECP generator()
+	{
+		ECP G;
+		BIG gx,gy;
+		gx=new BIG(ROM.CURVE_Gx);
+
+		if (ECP.CURVETYPE!=ECP.MONTGOMERY)
+		{
+			gy=new BIG(ROM.CURVE_Gy);
+			G=new ECP(gx,gy);
+		}
+		else
+			G=new ECP(gx);
+		return G;
 	}
 
 /*
