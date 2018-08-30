@@ -134,7 +134,7 @@ public final class PAIR256 {
 	}
 
 /* Optimal R-ate pairing */
-	public static FP48 ate(ECP8 P,ECP Q)
+	public static FP48 ate(ECP8 P1,ECP Q1)
 	{
 		FP2 f;
 		BIG x=new BIG(ROM.CURVE_Bnx);
@@ -142,6 +142,13 @@ public final class PAIR256 {
 		FP48 lv;
 		int bt;
 		
+		ECP8 P=new ECP8(P1);
+		ECP Q=new ECP(Q1);
+
+		P.affine();
+		Q.affine();
+
+
 		BIG n3=new BIG(n);
 		n3.pmul(3);
 		n3.norm();
@@ -151,8 +158,11 @@ public final class PAIR256 {
 
 		ECP8 A=new ECP8();
 		FP48 r=new FP48(1);
-
 		A.copy(P);
+
+		ECP8 MP=new ECP8();
+		MP.copy(P); MP.neg();
+
 		int nb=n3.nbits();
 
 		for (int i=nb-2;i>=1;i--)
@@ -169,10 +179,10 @@ public final class PAIR256 {
 			}
 			if (bt==-1)
 			{
-				P.neg();
-				lv=line(A,P,Qx,Qy);
+				//P.neg();
+				lv=line(A,MP,Qx,Qy);
 				r.smul(lv,ECP.SEXTIC_TWIST);
-				P.neg();
+				//P.neg();
 			}
 		}
 
@@ -185,13 +195,25 @@ public final class PAIR256 {
 	}
 
 /* Optimal R-ate double pairing e(P,Q).e(R,S) */
-	public static FP48 ate2(ECP8 P,ECP Q,ECP8 R,ECP S)
+	public static FP48 ate2(ECP8 P1,ECP Q1,ECP8 R1,ECP S1)
 	{
 		FP2 f;
 		BIG x=new BIG(ROM.CURVE_Bnx);
 		BIG n=new BIG(x);
 		FP48 lv;
 		int bt;
+
+		ECP8 P=new ECP8(P1);
+		ECP Q=new ECP(Q1);
+
+		P.affine();
+		Q.affine();
+
+		ECP8 R=new ECP8(R1);
+		ECP S=new ECP(S1);
+
+		R.affine();
+		S.affine();
 
 		BIG n3=new BIG(n);
 		n3.pmul(3);
@@ -208,6 +230,13 @@ public final class PAIR256 {
 
 		A.copy(P);
 		B.copy(R);
+
+		ECP8 MP=new ECP8();
+		MP.copy(P); MP.neg();
+		ECP8 MR=new ECP8();
+		MR.copy(R); MR.neg();
+
+
 		int nb=n3.nbits();
 
 		for (int i=nb-2;i>=1;i--)
@@ -229,14 +258,14 @@ public final class PAIR256 {
 			}
 			if (bt==-1)
 			{
-				P.neg(); 
-				lv=line(A,P,Qx,Qy);
+				//P.neg(); 
+				lv=line(A,MP,Qx,Qy);
 				r.smul(lv,ECP.SEXTIC_TWIST);
-				P.neg(); 
-				R.neg();
-				lv=line(B,R,Sx,Sy);
+				//P.neg(); 
+				//R.neg();
+				lv=line(B,MR,Sx,Sy);
 				r.smul(lv,ECP.SEXTIC_TWIST);
-				R.neg();
+				//R.neg();
 			}
 		}
 
@@ -467,12 +496,12 @@ public final class PAIR256 {
 		ECP R;
 		if (USE_GLV)
 		{
-			P.affine();
+			//P.affine();
 			R=new ECP();
 			R.copy(P);
 			int i,np,nn;
-			ECP Q=new ECP();
-			Q.copy(P);
+			ECP Q=new ECP(); 
+			Q.copy(P); Q.affine();
 			BIG q=new BIG(ROM.CURVE_Order);
 			FP cru=new FP(new BIG(ROM.CURVE_Cru));
 			BIG t=new BIG(0);
@@ -522,7 +551,7 @@ public final class PAIR256 {
 
 			BIG t=new BIG(0);
 			int i,np,nn;
-			P.affine();
+			//P.affine();
 
 			Q[0]=new ECP8(); Q[0].copy(P);
 			for (i=1;i<16;i++)
@@ -540,7 +569,8 @@ public final class PAIR256 {
 					u[i].copy(t);
 					Q[i].neg();
 				}
-				u[i].norm();	
+				u[i].norm();
+				//Q[i].affine();
 			}
 
 			R=ECP8.mul16(Q,u);
