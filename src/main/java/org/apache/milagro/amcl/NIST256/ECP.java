@@ -65,6 +65,13 @@ public final class ECP {
 			z=new FP(0);
 		}
 	}
+
+    public ECP(ECP e) {
+        this.x = new FP(e.x);
+        this.y = new FP(e.y);
+        this.z = new FP(e.z);
+    }
+
 /* test for O point-at-infinity */
 	public boolean is_infinity() {
 //		if (INF) return true;                            // Edits made
@@ -307,20 +314,22 @@ public final class ECP {
 /* extract x as a BIG */
 	public BIG getX()
 	{
-		affine();
-		return x.redc();
+		ECP W=new ECP(this);
+		W.affine();
+		return W.x.redc();
 	}
 /* extract y as a BIG */
 	public BIG getY()
 	{
-		affine();
-		return y.redc();
+		ECP W=new ECP(this);
+		W.affine();
+		return W.y.redc();
 	}
 
 /* get sign of Y */
 	public int getS()
 	{
-		affine();
+		//affine();
 		BIG y=getY();
 		return y.parity();
 	}
@@ -343,9 +352,10 @@ public final class ECP {
 	public void toBytes(byte[] b,boolean compress)
 	{
 		byte[] t=new byte[BIG.MODBYTES];
-		affine();
+		ECP W=new ECP(this);
+		W.affine();
 
-		x.redc().toBytes(t);
+		W.x.redc().toBytes(t);
 		for (int i=0;i<BIG.MODBYTES;i++) b[i+1]=t[i];
 
 		if (CURVETYPE==MONTGOMERY)
@@ -363,7 +373,7 @@ public final class ECP {
 
 		b[0]=0x04;
 
-		y.redc().toBytes(t);
+		W.y.redc().toBytes(t);
 		for (int i=0;i<BIG.MODBYTES;i++) b[i+BIG.MODBYTES+1]=t[i];
 	}
 /* convert from byte array to point */
@@ -397,18 +407,20 @@ public final class ECP {
 	}
 /* convert to hex string */
 	public String toString() {
-		if (is_infinity()) return "infinity";
-		affine();
-		if (CURVETYPE==MONTGOMERY) return "("+x.redc().toString()+")";
-		else return "("+x.redc().toString()+","+y.redc().toString()+")";
+		ECP W=new ECP(this);	
+		W.affine();
+		if (W.is_infinity()) return "infinity";
+		if (CURVETYPE==MONTGOMERY) return "("+W.x.redc().toString()+")";
+		else return "("+W.x.redc().toString()+","+W.y.redc().toString()+")";
 	}
 
 /* convert to hex string */
 	public String toRawString() {
 		//if (is_infinity()) return "infinity";
 		//affine();
-		if (CURVETYPE==MONTGOMERY) return "("+x.redc().toString()+","+z.redc().toString()+")";
-		else return "("+x.redc().toString()+","+y.redc().toString()+","+z.redc().toString()+")";
+		ECP W=new ECP(this);	
+		if (CURVETYPE==MONTGOMERY) return "("+W.x.redc().toString()+","+W.z.redc().toString()+")";
+		else return "("+W.x.redc().toString()+","+W.y.redc().toString()+","+W.z.redc().toString()+")";
 	}
 
 /* this*=2 */
@@ -806,9 +818,9 @@ public final class ECP {
 	}
 /* this-=Q */
 	public void sub(ECP Q) {
-		Q.neg();
-		add(Q);
-		Q.neg();
+		ECP NQ=new ECP(Q);
+		NQ.neg();
+		add(NQ);
 	}
 
 /* constant time multiply by small integer of length bts - use ladder */
@@ -880,7 +892,7 @@ public final class ECP {
 			ECP[] W=new ECP[8];
 			byte[] w=new byte[1+(BIG.NLEN*BIG.BASEBITS+3)/4];
 
-			affine();
+			//affine();
 
 // precompute table 
 			Q.copy(this);
@@ -945,8 +957,8 @@ public final class ECP {
 		int i,s,ns,nb;
 		byte a,b;
 
-		affine();
-		Q.affine();
+		//affine();
+		//Q.affine();
 
 		te.copy(e);
 		tf.copy(f);
@@ -1014,13 +1026,13 @@ public final class ECP {
 		if (cf==4)
 		{
 			dbl(); dbl();
-			affine();
+			//affine();
 			return;
 		} 
 		if (cf==8)
 		{
 			dbl(); dbl(); dbl();
-			affine();
+			//affine();
 			return;
 		}
 		BIG c=new BIG(ROM.CURVE_Cof);

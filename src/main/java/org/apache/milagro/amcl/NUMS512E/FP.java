@@ -40,8 +40,8 @@ public final class FP {
 
 
 	public final BIG x;
-	public BIG p=new BIG(ROM.Modulus);
-	public BIG r2modp=new BIG(ROM.R2modp);
+	//public BIG p=new BIG(ROM.Modulus);
+	//public BIG r2modp=new BIG(ROM.R2modp);
 	public int XES;
 
 /**************** 64-bit specific ************************/
@@ -166,7 +166,7 @@ public final class FP {
 	{
 		if (MODTYPE!=PSEUDO_MERSENNE && MODTYPE!=GENERALISED_MERSENNE)
 		{
-			DBIG d=BIG.mul(x,r2modp);  /*** Change ***/
+			DBIG d=BIG.mul(x,new BIG(ROM.R2modp));  /*** Change ***/
 			x.copy(mod(d));
 			XES=2;
 		}
@@ -190,8 +190,10 @@ public final class FP {
 
 /* test this=0? */
 	public boolean iszilch() {
-		reduce();
-		return x.iszilch();
+		FP z=new FP(this);
+		z.reduce();
+		return z.x.iszilch();
+
 	}
 
 /* copy from FP b */
@@ -338,7 +340,7 @@ public final class FP {
 	public void neg()
 	{
 		int sb;
-		BIG m=new BIG(p);
+		BIG m=new BIG(ROM.Modulus);
 
 		sb=logb2(XES-1);
 		m.fshl(sb);
@@ -371,7 +373,7 @@ public final class FP {
 			x.fshr(1);
 		else
 		{
-			x.add(p);
+			x.add(new BIG(ROM.Modulus));
 			x.norm();
 			x.fshr(1);
 		}
@@ -386,7 +388,7 @@ public final class FP {
 		x.copy(r);
 		nres();
 */
-		BIG m2=new BIG(p);
+		BIG m2=new BIG(ROM.Modulus);
 		m2.dec(2); m2.norm();
 		copy(pow(m2));
 
@@ -395,16 +397,18 @@ public final class FP {
 /* return TRUE if this==a */
 	public boolean equals(FP a)
 	{
-		a.reduce();
-		reduce();
-		if (BIG.comp(a.x,x)==0) return true;
+		FP f=new FP(this);
+		FP s=new FP(a);
+		f.reduce();
+		s.reduce();
+		if (BIG.comp(f.x,s.x)==0) return true;
 		return false;
 	}
 
 /* reduce this mod Modulus */
 	public void reduce()
 	{
-		x.mod(p);
+		x.mod(new BIG(ROM.Modulus));
 		XES=1;
 	}
 
@@ -468,7 +472,7 @@ public final class FP {
 	public FP sqrt()
 	{
 		reduce();
-		BIG b=new BIG(p);
+		BIG b=new BIG(ROM.Modulus);
 		if (MOD8==5)
 		{
 			b.dec(5); b.norm(); b.shr(3);
@@ -492,7 +496,7 @@ public final class FP {
 	public int jacobi()
 	{
 		BIG w=redc();
-		return w.jacobi(p);
+		return w.jacobi(new BIG(ROM.Modulus));
 	}
 /*
 	public static void main(String[] args) {
